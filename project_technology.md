@@ -8,7 +8,7 @@
 3. [Data Viz](#dataviz)
 4. [Cloud](#cloud)
 
-## Components and Technologies: 
+## Components and Technologies:
 
 ### 🗄 DataBases: How to organize the information and it's interaction. <a name="databases"></a>
 #### 📁 Given Data
@@ -18,7 +18,7 @@ All the data is processed and loaded with PostgreSQL to the database server.
 #### 🕷 External data Extraction: New sources of data to enrich the model.
 - Web Scrapping: we'll use Selenium, Scrapy and BeautifulSoup to create scripts to optain external information in order to relate with the given data and enrich the data analysis.
 
-### 🎛 Entity Relation (ER) Diagram 
+### 🎛 Entity Relation (ER) Diagram
 For the Kaggle's Given Data we create the ER Diagram ilustrated in this graph:
 ![Entity Relation Diagram](https://user-images.githubusercontent.com/69657612/161407546-1049e279-b928-47a4-8843-b057c0c8198c.jpeg)
 
@@ -35,7 +35,7 @@ In order to have a clean and better practice of performance, we have made the ne
 #### **olist_order_items_dataset ->  order_items**
 - Remove order_item_id column and add quantity column for normalization.
 - All values in the freight_value column should be updated by quantity * old value of freight_value.
- 
+
 #### 🔩**Database Enhancement**
 - Replace the name_length and description_length columns with name and description respectively in the products table and generate random values to simulate a more realistic environment.
 - Aggregate total_column for each order.
@@ -58,5 +58,4 @@ In order to have online our project with all it's features we will use the free 
 
 ![](https://drive.google.com/uc?id=1kcFl_Qz_K1WvuMY0wPUoA51tfOWEIv58)
 
-
-
+[Watch our interactive Data Model and Data Pipeline](https://miro.com/app/board/uXjVO-rg3Ls=/)

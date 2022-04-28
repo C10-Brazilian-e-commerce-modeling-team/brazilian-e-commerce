@@ -1,0 +1,9 @@
+#libraries
+jinja2
+sqlalchemy
+sqlalchemy_utils
+logging
+pandas
+numpy
+matplotlib
+seaborn
