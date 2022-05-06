@@ -20,7 +20,7 @@ file_name ={'orders':'orders', 'order_items':'order_items', 'products':'products
             'customers': 'customers','sellers': 'sellers',
             'payments':'payments', 'order_reviews':'order_reviews', 'geolocation':'geolocation'}
 for name in file_name.keys():
-    locals()[name] = pd.read_csv('datasets/'+file_name[name]+'.csv')
+    locals()[name] = pd.read_csv('Data_analysis/datasets/'+file_name[name]+'.csv')
 
 dataset_list = file_name.keys()
 
@@ -386,7 +386,7 @@ customer_counter["percentage_customer"] = 100.0 * customer_counter["num_customer
 
 
 #Payments
-payments = pd.read_csv('datasets/payments.csv')
+payments = pd.read_csv('Data_analysis/datasets/payments.csv')
 # Inspect the payment type
 data = payments['payment_type'].value_counts()
 labels = payments['payment_type'].unique()
