@@ -1,3 +1,8 @@
+#dashboard
+import streamlit as st
+import plost
+from PIL import Image
+
 #data analysis
 import pandas as pd
 import numpy as np
@@ -5,10 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import altair as alt
 
-#dashboard
-import streamlit as st
-import plost
-from PIL import Image
+
 
 # Page setting
 st.set_page_config(layout="wide")
