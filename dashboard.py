@@ -388,7 +388,7 @@ customer_counter["percentage_customer"] = 100.0 * customer_counter["num_customer
 
 
 #Payments
-payments = pd.read_csv('datasets/payments.csv')
+payments = pd.read_csv('Data_analysis/datasets/payments.csv')
 # Inspect the payment type
 data = payments['payment_type'].value_counts()
 
