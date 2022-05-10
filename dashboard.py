@@ -388,10 +388,14 @@ customer_counter["percentage_customer"] = 100.0 * customer_counter["num_customer
 
 
 #Payments
-payments = pd.read_csv('Data_analysis/datasets/payments.csv')
+payments = pd.read_csv('datasets/payments.csv')
 # Inspect the payment type
 data = payments['payment_type'].value_counts()
-labels = payments['payment_type'].unique()
+
+payments_df = pd.DataFrame(data=data)
+payments_df.rename(columns = {'payment_type':'count'}, inplace = True)
+payments_df['payment_type'] = payments_df.index
+
 
 
 
@@ -509,7 +513,7 @@ It shows us that the churn is a huge problem at this E-commerce.
 
 st.markdown('## 💱Payments')
 
-#plost.pie_chart(data=payments, theta='payment_type', color='payment_type', title='Payment method', legend='bottom')
+plost.pie_chart(data=payments_df, theta='count', color='payment_type', title='Payment method', legend='bottom')
 st.markdown('''74% of the customers paid via credit card. 
 Since having more payment methods does not seem to impact customer retention, we suggest the e-commerce sticks with credit card and 
 debit card payments''')
