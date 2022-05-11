@@ -338,7 +338,7 @@ payments_df['payment_type'] = payments_df.index
 #AQUI EMPIEZA EL DASHBOARD
 # Row A
 a1, a2 = st.columns(2)
-a1.image(Image.open('masterlogo.png'))
+a1.image(Image.open('Data_analysis/figures/masterlogo.png'))
 with a2:
     st.markdown('''# Brazilian E-Commerce Dashboard
     c10-data-modeling team
