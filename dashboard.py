@@ -183,7 +183,7 @@ prod_rank=products_df.pivot_table(values=['price', 'order_id'], index=['product_
 prod_rank["ord_size($R)"]=prod_rank["price"]/prod_rank["order_id"]
 prod_rank["price"]=prod_rank["price"]/1000
 prod_rank.sort_values(by='price', ascending = False, inplace = True)
-#prod_rank_top20=prod_rank.rename(columns={'order_id':'no_of_order','price':"revenue($R1000)"}).head(20)
+prod_rank_top20=prod_rank.rename(columns={'order_id':'no_of_order','price':"revenue($R1000)"}).head(20)
 
 # Delivery Performance
 # add delivery related columns with date format
