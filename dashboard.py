@@ -361,7 +361,8 @@ with b2:
     b2.write(heatmap2)
 
 st.markdown('### Percentage of Orders by Status')
-heatmap3 = px.imshow(ord_sy, text_auto=True,color_continuous_scale='deep', labels=dict(x='Order Status', y='Purchase Year'))
+heatmap3 = px.imshow(ord_sy, text_auto=True,color_continuous_scale='deep', labels=dict(x='Order Status', y='Purchase Year'), y=['2016','2017','2018'])
+heatmap3.update_layout(coloraxis_showscale=False)
 st.write(heatmap3)
 
 # Row C
