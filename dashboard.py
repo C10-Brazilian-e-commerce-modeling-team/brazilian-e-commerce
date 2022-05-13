@@ -13,7 +13,7 @@ import plost
 from PIL import Image
 
 # Page setting
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Brazilian E-Commerce Dashboard",page_icon="📊",layout="wide")
 
 # create the dataframes with the given csv files
 # Using a dict structure to store and generate the dataframes
