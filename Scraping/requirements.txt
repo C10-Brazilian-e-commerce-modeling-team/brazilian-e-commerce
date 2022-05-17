@@ -1,0 +1,6 @@
+pandas
+requests
+lxml
+# wheel
+# scrapy
+# autopep8
