@@ -1,20 +1,22 @@
+import json
 import pandas as pd
 from utils.scraper import scraping_reviews
 from utils.scraper import scraping_categories
 
 
-def create_dataset(products: list) -> pd.DataFrame:
+def create_dataset(products: list, route: str) -> dict:
     try:
-        list_reviews = []
+        dict_reviews = []
         for product in products:
             reviews = scraping_reviews(product)
-            print(reviews)
-            if reviews["reviews"][0]["rating"] and reviews["reviews"][0]["title"]["text"] and reviews["reviews"][0]["comment"]["content"]["text"]:
-                list_reviews.append([reviews["reviews"][0]["rating"], 
-                                    reviews["reviews"][0]["title"]["text"], 
-                                    reviews["reviews"][0]["comment"]["content"]["text"]]) # rating, title,  comment
+            # print(reviews)
+            dict_reviews.append(reviews)
 
-        return pd.DataFrame(list_reviews)
+        with open(route, "w") as f:
+            json.dump(dict_reviews, f)
+            f.close()
+
+        return "Json file created"
     
     except Exception as e:
         print(e)
@@ -26,4 +28,4 @@ if __name__ == '__main__':
     category_url = "https://lista.mercadolivre.com.br/casa-moveis-decoracao/"
     products = scraping_categories(category_url)
     
-    print(create_dataset(products))
+    print(create_dataset(products, "./reviews/first_test.json"))

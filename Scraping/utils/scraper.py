@@ -34,15 +34,17 @@ def get_reviews(request) -> json:
     return reviews_json
 
 
-def scraping_reviews(url_product: str) -> dict:
+def scraping_reviews(url_product: str) -> list:
     
     page_reviews = 'https://www.mercadolivre.com.br/noindex/catalog/reviews/MLB{}/scroll?siteId=MLB&type=all&isItem=true&offset={}&limit=1'
     altern_page_reviews = 'https://www.mercadolivre.com.br/noindex/catalog/reviews/MLB{}/scroll?siteId=MLB&type=all&isItem=false&offset={}&limit=1'
-    
+    list_reviews = []
+
     try:
         counter = 0
         product = url_product
         product_id = re.search("/MLB-?(\d{4,})", product)
+        print(product_id)
         while True:
             
             product_reviews = page_reviews.format(product_id.group(1), counter)
@@ -52,27 +54,35 @@ def scraping_reviews(url_product: str) -> dict:
                 product_reviews = altern_page_reviews.format(product_id.group(1), counter)
                 product_request = requests.get(product_reviews)
                 reviews = get_reviews(product_request)
-                print(reviews)
+                # print(reviews)
             
-                if len(reviews["reviews"][0]) == 1:
+                if len(reviews["reviews"][0]) == 1 and reviews["message"]:
+                    pass
+                elif len(reviews["reviews"][0]) == 1:
                     break
                 else:
-                    return reviews
+                    list_reviews.append(reviews)
 
             else:
                 product_request = requests.get(product_reviews)
                 reviews = get_reviews(product_request)
-                print(reviews)
+                # print(reviews)
 
-                if len(reviews["reviews"][0]) == 1:
+                if len(reviews["reviews"][0]) == 1 and reviews["message"]:
+                    pass
+                elif len(reviews["reviews"][0]) == 1:
                     break
                 else:
-                    return reviews
+                    list_reviews.append(reviews)
             
-        counter += 1
-        print("Reviews scraped: ".format(counter))
+            counter += 1
+            print(counter)
+
         
-    except:
-        next
+    except Exception as e:
+        print(e)
+
+
+    return list_reviews
 
 
