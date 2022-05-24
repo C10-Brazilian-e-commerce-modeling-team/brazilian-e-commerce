@@ -4,10 +4,10 @@ import requests
 import lxml.html as html
 
 
-def scraping_products(category_url: str) -> list:
+def scraping_categories(category_url: str) -> list:
 
+    all_links = []
     try:
-        all_links = []
         while category_url:
             response = requests.get(category_url)
             if response.status_code == 200:
@@ -17,7 +17,7 @@ def scraping_products(category_url: str) -> list:
                 all_links += links_products
                 next_page = parsed.xpath('//li[@class="andes-pagination__button andes-pagination__button--next"]/a/@href')
                 category_url = next_page[0]
-                print("products found:", len(all_links))
+        print("products found:", len(all_links))
 
     except Exception as e:
         print("Products scraped")
@@ -61,11 +61,11 @@ def scraping_reviews(url_product: str) -> list:
                 print(reviews)
             
                 if len(reviews["reviews"][0]) == 1 and reviews["message"]:
-                    pass
+                    print("No reviews")
                 elif len(reviews["reviews"][0]) == 1:
                     break
                 else:
-                    list_reviews += reviews
+                    list_reviews.append(reviews)
 
             else:
                 product_request = requests.get(product_reviews)
@@ -74,14 +74,14 @@ def scraping_reviews(url_product: str) -> list:
                 print(reviews)
 
                 if len(reviews["reviews"][0]) == 1 and reviews["message"]:
-                    pass
+                    print("No reviews")
                 elif len(reviews["reviews"][0]) == 1:
                     break
                 else:
-                    list_reviews += reviews
-            
+                    list_reviews.append(reviews)
+
             counter += 1
-            print(f"Scraping review no.{counter}")
+            print(f"Scraping review no.{counter}", len(list_reviews))
 
         
     except Exception as e:
