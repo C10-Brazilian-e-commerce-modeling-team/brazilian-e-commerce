@@ -14,13 +14,15 @@ def scraping_categories(category_url: str) -> list:
                 content = response.content.decode('utf-8')
                 parsed = html.fromstring(content)
                 links_products = parsed.xpath('//*[@id="root-app"]/div/div/section/ol/li/div/div/a/@href')
+                if len(links_products) == 0:
+                    links_products = parsed.xpath('//*[@id="root-app"]/div/div/section/ol/li/div/div/div/a/@href')
                 all_links += links_products
                 next_page = parsed.xpath('//li[@class="andes-pagination__button andes-pagination__button--next"]/a/@href')
                 category_url = next_page[0]
-        print("products found:", len(all_links))
 
     except Exception as e:
         print("Products scraped")
+        print("products found:", len(all_links))
 
     return all_links
 
@@ -81,7 +83,7 @@ def scraping_reviews(url_product: str) -> list:
                     list_reviews.append(reviews)
 
             counter += 1
-            print(f"Scraping review no.{counter}", len(list_reviews))
+            print(f"Scraping review no.{counter}")
 
         
     except Exception as e:
