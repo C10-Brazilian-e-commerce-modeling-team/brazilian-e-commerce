@@ -18,7 +18,6 @@
 import os
 import numpy as np
 import pandas as pd
-#from dev.training.project_transformers import ColumnMapping
 from custom_transformers import import_data, DropNullData, DropDuplicates
 from text_utils import re_breakline, re_dates, re_hiperlinks, re_money, re_negation, re_numbers, re_special_chars, re_whitespaces, ApplyRegex, StemmingProcess, StopWordsRemoval
 from nltk.corpus import stopwords
@@ -28,7 +27,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV
 from joblib import dump
 from sklearn.linear_model import LogisticRegression
-from ml_utils import BinaryClassifiersAnalysis, cross_val_performance
+from ml_utils import ColumnMapping, BinaryClassifiersAnalysis, cross_val_performance
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score, roc_curve
 
 
@@ -39,21 +38,25 @@ from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, reca
 """
 
 # Variables for address paths
-DATA_PATH = '../input/brazilian-ecommerce'
-PIPELINES_PATH = '../../pipelines' # Take a look at your project structure
-MODELS_PATH = '../../models' # Take a look at your project structure
+DATA_PATH = '../Data_analysis/datasets'
+PIPELINES_PATH = '/NLP/pipelines' # Take a look at your project structure
+#PIPELINES_PATH = ''
+MODELS_PATH = '/NLP/models' # Take a look at your project structure
+#MODELS_PATH = ''
 
 # Variables for reading the data
-FILENAME = 'olist_order_reviews_dataset.csv'
+FILENAME = 'order_reviews.csv'
 COLS_READ = ['review_comment_message', 'review_score']
 CORPUS_COL = 'review_comment_message'
 TARGET_COL = 'target'
+
 
 # Defining stopwords
 PT_STOPWORDS = stopwords.words('portuguese')
 
 # Variables for saving data
-METRICS_FILEPATH = 'metrics/model_performance.csv' # Take a look at your project structure
+#METRICS_FILEPATH = '/metrics/model_performance.csv' # Take a look at your project structure
+METRICS_FILEPATH = 'NLP\metrics\model_performance.csv'
 
 # Variables for retrieving model
 MODEL_KEY = 'LogisticRegression'
@@ -66,8 +69,8 @@ MODEL_KEY = 'LogisticRegression'
 """
 
 # Reading the data with text corpus and score
-df = import_data(os.path.join(DATA_PATH, FILENAME), usecols=COLS_READ)
-
+#df = import_data(os.path.join(DATA_PATH, FILENAME), usecols=COLS_READ)
+df = import_data('Data_analysis\datasets\order_reviews.csv', usecols=COLS_READ)
 
 """
 -----------------------------------
@@ -238,7 +241,7 @@ final_model = e2e_pipeline.named_steps['model']
 final_performance = cross_val_performance(final_model, X_prep, y, cv=5)
 final_performance = final_performance.append(performance)
 print(final_performance)
-#final_performance.to_csv(METRICS_FILEPATH, index=False)
+final_performance.to_csv(METRICS_FILEPATH, index=False)
 
 
 """
@@ -248,14 +251,19 @@ print(final_performance)
 -----------------------------------
 """
 
-"""# Creating folders for saving pkl files (if not exists)
+# Creating folders for saving pkl files (if not exists)
 if not os.path.exists('../../models'):
     os.makedirs('../../models')
 if not os.path.exists('../../pipelines'):
     os.makedirs('../../pipelines')
 
 # Saving pkl files
-dump(initial_prep_pipeline, os.path.join(PIPELINES_PATH, 'initial_prep_pipeline.pkl'))
-dump(text_prep_pipeline, os.path.join(PIPELINES_PATH, 'text_prep_pipeline.pkl'))
-dump(e2e_pipeline, os.path.join(PIPELINES_PATH, 'e2e_pipeline.pkl'))
-dump(final_model, os.path.join(MODELS_PATH, 'sentiment_clf_model.pkl'))"""
+dump(initial_prep_pipeline, 'NLP\pipelines\initial_prep_pipeline.pkl')
+dump(text_prep_pipeline, 'NLP\pipelines\text_prep_pipeline.pkl')
+dump(e2e_pipeline, 'NLP\pipelines\e2e_pipeline.pkl')
+dump(final_model, os.path.join(MODELS_PATH, 'NLP\models\sentiment_clf_model.pkl'))
+
+#dump(initial_prep_pipeline, os.path.join(PIPELINES_PATH, 'initial_prep_pipeline.pkl'))
+#dump(text_prep_pipeline, os.path.join(PIPELINES_PATH, 'text_prep_pipeline.pkl'))
+#dump(e2e_pipeline, os.path.join(PIPELINES_PATH, 'e2e_pipeline.pkl'))
+#dump(final_model, os.path.join(MODELS_PATH, 'sentiment_clf_model.pkl'))

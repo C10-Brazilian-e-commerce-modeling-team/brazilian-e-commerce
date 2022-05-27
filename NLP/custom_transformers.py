@@ -9,9 +9,6 @@ The applications can be to simple optimized data reading or a custom transformer
     2.1 Pre Processing Pipelines
     2.2 Processing Pipelines
 
----------------------------------------------------------------
-Written by Thiago Panini - Latest version: September 14th 2020
----------------------------------------------------------------
 """
 
 # Importing libraries
