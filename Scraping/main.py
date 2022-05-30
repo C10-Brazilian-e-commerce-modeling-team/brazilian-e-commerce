@@ -1,8 +1,8 @@
 import json
 import random
 import pandas as pd
-from utils.scraper import scraping_reviews
-from utils.scraper import scraping_categories
+from utils.scraper import scraping_reviews, scraping_categories
+from utils.data_process import read_categories, features, create_csv
 
 
 def create_dataset(products: list, path: str) -> dict:
@@ -35,11 +35,21 @@ if __name__ == '__main__':
         categories = json.load(f)
         f.close()
     
+    # for key in categories:
+    #     category = categories[key]
+        # products = scraping_categories(category)
+        # print("Category: {} found {} articles".format(key, len(products)))
+        # print(create_dataset(products, "./reviews/{}.json".format(key)))
+    
     for key in categories:
-        category = categories[key]
-        products = scraping_categories(category)
-        print("Category: {} found {} articles".format(key, len(products)))
-        print(create_dataset(products, "./reviews/{}.json".format(key)))
+        reviews_json = read_categories(key)
+        df_reviews = features(reviews_json)
+        print(f"Category {key}: {len(df_reviews)}")
+        create_csv(df=df_reviews, path='./External_data/{}.csv'.format(key))
+        print("csv created")
+
+
+
 
 
 
