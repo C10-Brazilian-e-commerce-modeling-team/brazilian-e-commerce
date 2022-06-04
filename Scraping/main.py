@@ -6,6 +6,21 @@ from utils.data_process import read_categories, features, create_csv
 
 
 def create_dataset(products: list, path: str) -> dict:
+    
+    """
+    This script create a json format dataset of a list of products.
+    
+    Paramters
+    ----------
+    products: list
+        List of products to scrape reviews
+    path: str
+        Path to save the created file
+
+    Returns:
+    ----------
+        Json file with all products reviews in the specified dir of path
+    """
     try:
         dict_reviews = []
         idxs = [random.randrange(0, len(products)) for _ in range(110)]
@@ -27,20 +42,28 @@ def create_dataset(products: list, path: str) -> dict:
 
 if __name__ == '__main__':
 
-    # category_url = "https://lista.mercadolivre.com.br/casa-moveis-decoracao/_Deal_casaedecoracao-decor#deal_print_id=e97f30c0-d00a-11ec-88f8-6dbc6c3a0c56&c_id=special-normal&c_element_order=6&c_campaign=LABEL&c_uid=e97f30c0-d00a-11ec-88f8-6dbc6c3a0c56"
-    # products = scraping_categories(category_url)
-    # print(create_dataset(products, "./reviews/beleza_saude.json"))
+    """
+    Script for scrape just once category
+
+    category_url = "category url"
+    products = scraping_categories(category_url)
+    print(create_dataset(products, path))
+    """
 
     with open('categories/brazil.json', 'r') as f:
         categories = json.load(f)
         f.close()
     
-    # for key in categories:
-    #     category = categories[key]
-        # products = scraping_categories(category)
-        # print("Category: {} found {} articles".format(key, len(products)))
-        # print(create_dataset(products, "./reviews/{}.json".format(key)))
+    # This block execute the code for scrape all reviews in the variable "categories"
+    # Returns a json files for each category
+    for key in categories:
+        category = categories[key]
+        products = scraping_categories(category)
+        print("Category: {} found {} articles".format(key, len(products)))
+        print(create_dataset(products, "./reviews/{}.json".format(key)))
     
+    # This block takes reviews and ranking of products from json files 
+    # create .csv file with reviews for each category
     for key in categories:
         reviews_json = read_categories(key)
         df_reviews = features(reviews_json)

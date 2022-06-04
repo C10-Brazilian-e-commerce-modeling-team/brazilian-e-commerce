@@ -15,8 +15,8 @@ def scraping_categories(category_url: str) -> list:
 
     Returns
     ---------
-        all_links: list
-            List with all products of category
+    all_links: list
+        List with all products of category
     """
 
     all_links = []
