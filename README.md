@@ -10,7 +10,7 @@ The project is currently working with the [Brazilian E-Commerce Public Dataset](
 
 📋 You can check the all the details of the technology used [here](https://github.com/felipesalda/brazilian-e-commerce/blob/main/project_technology.md).
 
-// 🖼️ See a data resume and insights in a **Storytelling** work based on a Business Intelligence case scenario [here]
+🖼️ Check a data resume and insights in a **Storytelling** work based on a Business Intelligence case scenario [here](https://cumbersome-gorgonzola-9a1.notion.site/Storytelling-06d3025108694bed9d2f9a8cf3bcdc60).
 
 ## **👩🏻‍👩🏻‍👧🏻‍👦🏻Team:**
 - Felipe Saldarriaga [@felipesaldata](https://github.com/felipesaldata)
