@@ -41,7 +41,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, reca
 DATA_PATH = '../Data_analysis/datasets'
 PIPELINES_PATH = '/NLP/pipelines' # Take a look at your project structure
 #PIPELINES_PATH = ''
-MODELS_PATH = '/NLP/models' # Take a look at your project structure
+MODELS_PATH = 'models' # Take a look at your project structure
 #MODELS_PATH = ''
 
 # Variables for reading the data
@@ -56,7 +56,7 @@ PT_STOPWORDS = stopwords.words('portuguese')
 
 # Variables for saving data
 #METRICS_FILEPATH = '/metrics/model_performance.csv' # Take a look at your project structure
-METRICS_FILEPATH = 'NLP\metrics\model_performance.csv'
+METRICS_FILEPATH = 'metrics/model_performance.csv'
 
 # Variables for retrieving model
 MODEL_KEY = 'LogisticRegression'
@@ -70,7 +70,7 @@ MODEL_KEY = 'LogisticRegression'
 
 # Reading the data with text corpus and score
 #df = import_data(os.path.join(DATA_PATH, FILENAME), usecols=COLS_READ)
-df = import_data('Data_analysis\datasets\order_reviews.csv', usecols=COLS_READ)
+df = import_data('../Data_analysis/datasets/order_reviews.csv', usecols=COLS_READ)
 
 """
 -----------------------------------
@@ -176,7 +176,7 @@ trainer.fit(set_classifiers, X_train, y_train, random_search=True, scoring='accu
 """
 
 # Evaluating metrics
-performance = trainer.evaluate_performance(X_train, y_train, X_test, y_test, cv=5, save=False,
+performance = trainer.evaluate_performance(X_train, y_train, X_test, y_test, cv=5, save=True,
                                            performances_filepath=METRICS_FILEPATH) # In your project env, save=True and overwrite=True may be useful
 
 
@@ -258,10 +258,10 @@ if not os.path.exists('../../pipelines'):
     os.makedirs('../../pipelines')
 
 # Saving pkl files
-dump(initial_prep_pipeline, 'NLP\pipelines\initial_prep_pipeline.pkl')
-dump(text_prep_pipeline, 'NLP\pipelines\text_prep_pipeline.pkl')
-dump(e2e_pipeline, 'NLP\pipelines\e2e_pipeline.pkl')
-dump(final_model, os.path.join(MODELS_PATH, 'NLP\models\sentiment_clf_model.pkl'))
+dump(initial_prep_pipeline, 'pipelines/initial_prep_pipeline2.pkl')
+dump(text_prep_pipeline, 'pipelines/text_prep_pipeline.pkl')
+dump(e2e_pipeline, 'pipelines/e2e_pipeline.pkl')
+dump(final_model, 'models/sentiment_clf_model.pkl')
 
 #dump(initial_prep_pipeline, os.path.join(PIPELINES_PATH, 'initial_prep_pipeline.pkl'))
 #dump(text_prep_pipeline, os.path.join(PIPELINES_PATH, 'text_prep_pipeline.pkl'))
