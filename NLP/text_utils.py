@@ -298,7 +298,7 @@ def sentiment_analysis(text, pipeline, model, vectorizer=None):
         text_prep = pipeline.fit_transform(text)    
         matrix = vectorizer.transform(text_prep)
     else:
-         matrix = pipeline.transform(text_prep)
+        matrix = pipeline.transform(text_prep)
 
     # Predicting sentiment
     pred = model.predict(matrix)
