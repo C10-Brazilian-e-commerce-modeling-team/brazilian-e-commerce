@@ -1,8 +1,8 @@
-from cfg import RAW_DATA_URL_DICT
-from extract import Extract_csv, Extract_enrich_order
-from load import Loader
+from utils.cfg import RAW_DATA_URL_DICT
+from utils.extract import Extract_csv, Extract_enrich_order
+from utils.load import Loader
 import pandas as pd
-from constants import TABLE_NAMES
+from utils.constants import TABLE_NAMES
 
 
 extract_dict = {
