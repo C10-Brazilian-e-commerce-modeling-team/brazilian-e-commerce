@@ -35,19 +35,20 @@ def transform():
     pass
 
 def load():
-    pass
-
-def run_pipeline():
-    # Extract raw data and store path in file_paths dict
-    file_paths = extract_raws()
-    print('Extract done!')
-
     load_ = Loader()
 
     for name in TABLE_NAMES:
         path = f'data/{name}.csv'
         df = pd.read_csv(path)
         load_.load_table(name, df)
+    
+
+def run_pipeline():
+    # Extract raw data and store path in file_paths dict
+    file_paths = extract_raws()
+    print('Extract done!')
+
+    load()
     print('Load Done!')
 
 if __name__ == "__main__":
