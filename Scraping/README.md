@@ -5,19 +5,18 @@
 
 - Create Virtual environment
 
-  python -m venv venv
+  `$ python -m venv venv`
 
 - Activate Virtual environment
 
-  source venv/bin/activate
+  `$ source venv/bin/activate`
   
-- Install requirements.txt
+  `$ Install requirements.txt`
 
-  pip install -r requirements.txt
+  `$ pip install -r requirements.txt`
   
 - Run main.py
 
-  python main.py
-  
+  `$ python main.py`
  
 
