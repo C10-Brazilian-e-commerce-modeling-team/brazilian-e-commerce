@@ -1,6 +1,6 @@
 from pathlib import Path
 
-ROOT_DIR = Path()
+ROOT_DIR = Path().resolve().parent
 DATA_DIR = ROOT_DIR / 'data'
 SQL_DIR = ROOT_DIR / 'sql'
 

@@ -282,7 +282,7 @@ class TextFeatureExtraction(BaseEstimator, TransformerMixin):
 """
 
 # Defining a function to plot the sentiment of a given phrase
-def sentiment_analysis(text, pipeline, vectorizer, model):
+def sentiment_analysis(text, pipeline, model, vectorizer=None):
     """
     Args
     -----------
@@ -294,8 +294,11 @@ def sentiment_analysis(text, pipeline, vectorizer, model):
     # Applying the pipeline
     if type(text) is not list:
         text = [text]
-    text_prep = pipeline.fit_transform(text)
-    matrix = vectorizer.transform(text_prep)
+    if vectorizer == None:
+        text_prep = pipeline.fit_transform(text)    
+        matrix = vectorizer.transform(text_prep)
+    else:
+        matrix = pipeline.transform(text_prep)
 
     # Predicting sentiment
     pred = model.predict(matrix)
