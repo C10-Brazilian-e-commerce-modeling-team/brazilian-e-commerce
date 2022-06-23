@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import altair as alt
 import plotly.express as px
-
+import json
 
 #dashboard
 import streamlit as st
@@ -170,8 +170,8 @@ ord_wd['indice'] = ord_wd.index
 
 # pivot table with the mean of daily # and size of the orders by purchase date and time
 ord_time=products_df.pivot_table(values="order_id", index=['purchase_date','purchase_time'],aggfunc="nunique")
-ord_time.reset_index(level="purchase_date", inplace=True)
-ord_time.reset_index(level="purchase_time", inplace=True)
+#ord_time.reset_index(level="purchase_date", inplace=True)
+#ord_time.reset_index(level="purchase_time", inplace=True)
 
 
 # Top Products
@@ -253,50 +253,7 @@ uni_review_pt = uni_review.pivot_table(values='review_score', index='est_to_deli
 uni_review_pt.sort_values(by=['review_score'], ascending=False, inplace=True)
 uni_review_pt['indice'] = uni_review_pt.index
 
-#🚚 Late Delivers by Carrier
-# Unique orders with late deliver
-late_deliver=late_deliver_df.pivot_table(values='order_id',index='est_to_deliver', aggfunc='nunique')
-late_deliver.rename(columns={'order_id':'unique_orders'}, inplace=True)
 
-# Unique orders with late deliver by carrier
-late_to_carrier=deliver_df[deliver_df['est_to_deliver']=='late deliver'].pivot_table(values='order_id',index='est_to_deliver', columns = 'seller_to_carrier', aggfunc='nunique')
-deliver_to_carrier = late_deliver.merge(late_to_carrier, how = "left", on = 'est_to_deliver')
-
-# Recalculat the # of orders because the products of a order may be delivered by different sellers and corresponding carriers
-deliver_to_carrier.drop(columns='in time deliver to carrier')
-deliver_to_carrier['in time deliver to carrier'] = deliver_to_carrier['unique_orders'] - deliver_to_carrier['late deliver to carrier']
-deliver_to_carrier.drop(columns='unique_orders',inplace=True)
-deli_to_carrier=deliver_to_carrier.T
-deli_to_carrier['status']=deli_to_carrier.index
-# Unique orders by seller
-seller=deliver_df[['seller_id','seller_to_carrier','order_id']]
-seller_pv=seller.pivot_table(values='order_id',index='seller_id', aggfunc='nunique')
-seller_pv.reset_index(inplace=True)
-seller_pv.rename(columns={"order_id": "unique_order"}, inplace=True)
-
-# Late orders by seller
-seller_late_deliver=seller[seller.seller_to_carrier=='late deliver to carrier']
-seller_late_deli = seller_late_deliver.drop_duplicates() #remove duplicates
-seller_late=seller_late_deli.pivot_table(values='order_id',index='seller_id', aggfunc='nunique')
-seller_late.reset_index(inplace=True)
-seller_late.rename(columns={"order_id": "late_order"}, inplace=True)
-
-# Percentage of late orders by seller
-seller_summary=seller_pv.merge(seller_late, how="left", on='seller_id')
-seller_summary.fillna(0, inplace=True) #fill the missing values with 0
-seller_summary["percent_late_order"]=seller_summary.late_order*100/seller_summary.unique_order
-seller_summary.sort_values("percent_late_order", ascending=False, inplace=True)
-seller_summary.head(20) #Top 20 sellers with the highest percentage of late orders
-
-# Average orders per seller
-avg_ord_per_seller = pd.DataFrame(seller_pv.mean(numeric_only=True))
-avg_ord_per_seller.reset_index(inplace=True)
-
-# Seller with most late order: # of orders >= avg orders/seller & highest percentage of late orders
-seller_top=seller_summary[seller_summary['unique_order']>=avg_ord_per_seller.iloc[0,1]]
-seller_top = seller_top.sort_values("percent_late_order", ascending=False)
-seller_top_10 = seller_top.head(10)
-seller_top_10.set_index('seller_id', inplace=True)
 
 #Churn analysis
 # Dataframe to count how many times a customer shop 
@@ -425,6 +382,7 @@ customers__orders_reviews = customers__orders_reviews[['order_status', 'customer
        'review_id', 'review_score', 'sentiment_label']]
 
 #Graph 6.1 
+
 # group customers__orders_reviews by state aggregation of the count of reviews and review_score mean
 customers__orders_reviews_state = customers__orders_reviews.groupby(['customer_state'])['review_score'].agg(['count', 'mean'])
 
@@ -443,31 +401,19 @@ customers__orders_reviews_state = customers__orders_reviews_state[['customer_sta
 #reset index
 customers__orders_reviews_state = customers__orders_reviews_state.reset_index(drop=True)
 
-#Some of the default values overlaps on the graph so we need to replace them with more propel values
 
-#replace cordinates of RN with lat= -5.83 and lng= -35.21
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'RN', 'geolocation_lat'] = -5.833
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'RN', 'geolocation_lng'] = -35.21
+# open brazil_states.json
+with open('Data_analysis/datasets/brazil-states.geojson') as json_file:
+    brazil_geo = json.load(json_file)
 
-#replace cordinates of AC with lat= -8.63 and lng= -69.78
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'AC', 'geolocation_lat'] = -8.63
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'AC', 'geolocation_lng'] = -69.78
+# creates a dict with the correspinding id with the sigla
+state_id_map = {}
+for state in brazil_geo['features']:
+    state_id_map[state['properties']['sigla']] = state['properties']['id']
 
-#replace cordinates of GO with lat= -15.78 and lng= -50.69
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'GO', 'geolocation_lat'] = -15.78
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'GO', 'geolocation_lng'] = -50.69
+# add regiao_id to the customers__orders_reviews_state
+customers__orders_reviews_state['regiao_id'] = customers__orders_reviews_state['customer_state'].map(state_id_map)
 
-#replaces cordinates of PA with lat= -5.93 and lng= -52.27
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PA', 'geolocation_lat'] = -5.93
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PA', 'geolocation_lng'] = -52.27
-
-#replace cordinates of BA with lat= -12.29 and lng= -42.34
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'BA', 'geolocation_lat'] = -12.29
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'BA', 'geolocation_lng'] = -42.34
-
-#replace cordinates of PE with lat= -8.59 and lng= -38.34
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PE', 'geolocation_lat'] = -8.59
-customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PE', 'geolocation_lng'] = -38.34
 
 
 #Graph 7
@@ -503,90 +449,99 @@ with a2:
 b1, b2 = st.columns(2)
 with b1:
     #st.write(heatmap1)
-    b1.markdown('### Revenue per year of the Top 3 states (G1)')
-    bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city")
+    b1.markdown('### Revenue from the Top 3 States (G1)')
+    bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city",
+                  labels=dict(date='Date',customer_city='Customer City'))
     b1.write(bar1)
    
 with b2:
     #st.write(heatmap2)
-    b2.markdown('### Graph 2')
-    bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english')
+    b2.markdown('### Revenue from the Top 5 Product Categories (G2)')
+    bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english', 
+                  labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'))
     b2.write(bar2)
-
 
 #h
 b3, b4 =st.columns(2)
 with b3:
-    b3.markdown('### Graph 3')
+    b3.markdown('### Share of revenue at Top 3 States (G3)')
     bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english')
     b3.write(bar3)
 
 
 with b4:
-    b4.markdown("### Graph 4")
-    print(best_selling_date,'Total Revenue($): ',format(best_selling_revenue*1000,'.2f'))
+    b4.markdown("### Orders distribuited by Time and Day (G4)")
     bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep')
+    bar4.update_yaxes(title=None,visible=True, showticklabels=True)
+    bar4.update_xaxes(title=None,visible=True, showticklabels=True)
     b4.write(bar4)
     
-
-# Row C
-c1, c2, c3 = st.columns(3)
+c1,c2 = st.columns(2)
 with c1:
-    st.markdown('### Graph 5')
-    pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status')
+    st.markdown('### On Time and Late Deliveries (G5)')
+    pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status',color_discrete_sequence=px.colors.sequential.Agsunset)
     pie_actual_late_delivery1.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
     pie_actual_late_delivery1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
     st.write(pie_actual_late_delivery1)
+c2.metric('Record date of Revenue:',best_selling_date)
+c2.metric('Total Revenue ($): ',format(best_selling_revenue*1000,'.2f'))
 
-with c2:
-    st.markdown('### Graph 6')
+
+# Row C
+d1, d2 = st.columns(2)
+
+
+with d1:
+    st.markdown('### Review Score per user (G6.1)')
     # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
     bar6 = px.density_mapbox(customers__orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
                             z="review_score", radius=3, mapbox_style="open-street-map",
                             range_color=(0, 5),
                             color_continuous_scale = px.colors.diverging.RdYlGn
                             ,zoom=2, center={"lat": -10.0, "lon": -51.0})
-    bar6.update_layout(title_text="Reviews by customers")
-    c2.write(bar6)      
-with c3:
-    st.markdown('### Graph 6.1')
-    #plot bubble chart of customers__orders_reviews_state
-    bar61 = px.scatter_geo(customers__orders_reviews_state, lat="geolocation_lat", lon="geolocation_lng",
-                            color="mean", size="count",size_max=50,
-                            range_color=(2, 5),
-                            color_continuous_scale = px.colors.diverging.RdYlGn,
-                            hover_name="customer_state",
-                            hover_data=["count", "mean"],
-                            text = "count",
-                            center={"lat": -10.0, "lon": -51.0},
-                            scope="south america",
-                            template="plotly_dark")
-
-    bar61.update_layout(title_text="Reviews by customers")
-    c3.write(bar61)
-
-#Row D
-d1, d2 = st.columns(2)
-
-with d1:
-    st.markdown('### Graph 7')
-    bar7 = go.Figure(data=[go.Table(
-        header=dict(values=list(churn.columns),
-                    fill_color='paleturquoise',
-                    align='left'),
-        cells=dict(values=[churn.Orders, churn.Customers, churn.Percentage],
-                fill_color='lavender',
-                align='left'))
-    ])
-
-    bar7.update_layout(
-            title_text = 'Churn Analysis'
-        )
-
-    d1.write(bar7)
+    d1.write(bar6)      
 
 with d2:
-    st.markdown('### Graph 8')
+    st.markdown('### Graph 6.2')
+    # creates a choropleth map using the lat_lng column and state_id_map
+    bar62 = px.choropleth(customers__orders_reviews_state, geojson=brazil_geo, locations="customer_state",
+                    color="mean",
+                    color_continuous_scale=px.colors.diverging.RdYlGn,
+                    hover_name="customer_state",
+                    hover_data=["count", "mean"], featureidkey="properties.sigla",
+                    scope="south america",
+                    template="plotly_dark")
+    bar62.update_geos(fitbounds="locations")
+    d2.write(bar62)
+    
+
+
+
+#Row E
+e1, e2 = st.columns(2)
+
+with e1:
+    st.markdown('### 🏃🏽‍♀️💨 Churn Analysis (G7)')
+    bar7 = go.Figure(data=[go.Table(
+        header=dict(values=list(churn.columns),
+                    fill_color='darkblue',
+                    align='center'),
+        cells=dict(values=[churn.Orders, churn.Customers, churn.Percentage],
+                fill_color='DarkSlateBlue',
+                align='center'))])
+
+    e1.write(bar7)
+
+
+with e2:
+    st.markdown('### Payment Preferences (G8)')
     pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type')
     pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
-    d2.write(pie_payment1)
+    e2.write(pie_payment1)
+
+
+
+
+
+    
+
