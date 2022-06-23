@@ -6,5 +6,4 @@ numpy
 matplotlib
 plotly
 seaborn
-json
 altair
