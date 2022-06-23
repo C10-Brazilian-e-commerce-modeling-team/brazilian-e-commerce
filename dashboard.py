@@ -69,8 +69,6 @@ ord_sy = ord_sy.apply(lambda x: ((x*100)/x.sum()).round(2), axis=0).T
 # Show the percentage of orders by status for each year:
 perc_ord_status=ord_sy.style.set_caption('Percentage of Orders by Status')
 
-
-
 ### Merging the datasets
 detail_df= (((order_items.merge(orders_df, how="left",on='order_id'))
                  .merge(products, how="left",on='product_id'))
@@ -329,160 +327,266 @@ payments_df.rename(columns = {'payment_type':'count'}, inplace = True)
 payments_df['payment_type'] = payments_df.index
 
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------
+import plotly.graph_objects as go
+
+#Graph 1
+products_df1 = detail_df[['order_id', 'product_id','price', 'order_status', 'purchase_date','purchase_MMYYYY', 'purchase_year','purchase_month','purchase_day','purchase_time','weekday','product_category_name_english', 'customer_unique_id', 'customer_state'
+                         , 'order_delivered_customer_date', 'order_estimated_delivery_date','order_delivered_carrier_date','shipping_limit_date', 'seller_id', 'customer_city']]
+
+
+sao = products_df1[(products_df1['customer_city'] == 'sao paulo') | (products_df1['customer_city'] == 'rio de janeiro') | (products_df1['customer_city'] == 'belo horizonte') ]
+
+srb = sao.pivot_table(values = ['order_id', 'price']
+                                , index=['purchase_year', 'customer_city']
+                                , columns= None
+                                , aggfunc={'order_id': 'nunique', 'price': 'sum'})
+srb.reset_index(inplace=True)
+srb['date'] = pd.to_datetime(srb['purchase_year'].map(str) 
+                                ).dt.strftime("%Y")
+del srb['purchase_year']
+srb['revenue($R1000)'] = srb['price']/1000
+del srb['price']
+
+srb.drop([0, 1, 2], inplace=True)
+
+#Graph 2
+total_sales_categories_year = products_df[['order_id','purchase_year','price','product_category_name_english']]
+top5_cat_year = total_sales_categories_year.groupby(['purchase_year','product_category_name_english'],as_index=False).agg({'price':'sum'}).sort_values(by=['purchase_year','price'], ascending=False)
+top5_cat_year = top5_cat_year.groupby('purchase_year').head(5).reset_index(drop=True)
+
+#Graph 3
+df_state_treemap = products_df[['order_id','purchase_year','price','product_category_name_english','customer_state']]
+df_state_treemap = df_state_treemap.groupby(['customer_state','product_category_name_english'],as_index=False).agg({'price':['sum','count']})
+df_state_treemap = df_state_treemap.groupby('customer_state').head(5).reset_index(drop=True)
+df_state_treemap.columns =list(map(''.join, df_state_treemap.columns.values)) # to integrate the pricesum and pricecount columns from multiindex to single index
+
+df_state_treemap = products_df[['order_id','purchase_year','price','product_category_name_english','customer_state']]
+df_state_treemap_3_states = df_state_treemap.groupby(['customer_state','product_category_name_english'],as_index=False).agg({'price':['sum','count']})
+df_state_treemap_3_states.columns =list(map(''.join, df_state_treemap_3_states.columns.values))
+df_state_treemap_3_states = df_state_treemap_3_states.sort_values(by='pricesum', ascending=False)
+df_state_treemap_3_states = df_state_treemap_3_states.groupby('customer_state').head(5).reset_index(drop=True)
+
+top_3 = df_state_treemap_3_states.groupby('customer_state').sum().sort_values('pricesum', ascending=False).head(3).index
+df_state_treemap_3_states = df_state_treemap_3_states[df_state_treemap_3_states.customer_state.isin(top_3)]
+
+#Graph 4
+
+best_selling_date = ord_Nov_17['revenue($R1000)'].idxmax()
+best_selling_revenue = ord_Nov_17['revenue($R1000)'].max()
+
+#Graph 6
+# Reviews
+reviews_df = pd.read_csv('Data_analysis/datasets/order_reviews.csv')
+orders_df = pd.read_csv('Data_analysis/datasets/orders.csv')
+customers_df = pd.read_csv('Data_analysis/datasets/customers.csv')
+geolocation_df = pd.read_csv('Data_analysis/datasets/geolocation.csv')
+df_comments = reviews_df.loc[:, ['review_score', 'review_comment_message']]
+df_comments = df_comments.dropna(subset=['review_comment_message'])
+df_comments = df_comments.reset_index(drop=True)
+print(f'Dataset shape: {df_comments.shape}')
+df_comments.columns = ['score', 'comment']
+df_comments.head()
+
+geolocation_df = geolocation_df.rename(columns={'geolocation_zip_code_prefix':'customer_zip_code_prefix'})
+
+# create a new dataset with the customers geolocation_lat and geolocation_long
+customers_geolocation = customers_df.merge(geolocation_df, how='left', on='customer_zip_code_prefix')
+
+# clean the customer_df duplicates customer_unique_id
+customers_geolocation = customers_geolocation.drop_duplicates(subset=['customer_unique_id'], keep='first')
+
+# merge customers_geolocation and orders_df
+customers_geolocation_orders = orders_df.merge(customers_geolocation, how='left', on='customer_id')
+
+# mergue customers_geolocation_orders with reviews_df
+customers__orders_reviews = customers_geolocation_orders.merge(reviews_df, how='left', on='order_id')
+
+# map the review_score to a numerical value
+score_map = {
+    1: 'negative',
+    2: 'negative',
+    3: 'positive',
+    4: 'positive',
+    5: 'positive'
+}
+customers__orders_reviews['sentiment_label'] = customers__orders_reviews['review_score'].map(score_map)
+
+# drop customers__orders_reviews with zip_code_prefix = 0 or nan
+customers__orders_reviews = customers__orders_reviews[customers__orders_reviews['customer_zip_code_prefix'] != 0]
+customers__orders_reviews = customers__orders_reviews[customers__orders_reviews['customer_zip_code_prefix'].notnull()]
+
+#drop nan reviews_score
+customers__orders_reviews = customers__orders_reviews[customers__orders_reviews['review_score'].notnull()]
+
+#keeping only the columns required for the graph
+customers__orders_reviews = customers__orders_reviews[['order_status', 'customer_unique_id', 'customer_city',
+       'customer_state', 'geolocation_lat', 'geolocation_lng', 'geolocation_city', 'geolocation_state', 
+       'review_id', 'review_score', 'sentiment_label']]
+
+#Graph 6.1 
+# group customers__orders_reviews by state aggregation of the count of reviews and review_score mean
+customers__orders_reviews_state = customers__orders_reviews.groupby(['customer_state'])['review_score'].agg(['count', 'mean'])
+
+#rename column to merge the coordinates
+geolocation_df.rename(columns={'geolocation_state':'customer_state'}, inplace=True)
+
+# add the cordinates of the state to the customers__orders_reviews_state
+customers__orders_reviews_state = customers__orders_reviews_state.merge(geolocation_df, how='left', on='customer_state')
+
+#drop duplicates
+customers__orders_reviews_state = customers__orders_reviews_state.drop_duplicates(subset=['customer_state'], keep='first')
+
+#keeping only the columns required for the graph
+customers__orders_reviews_state = customers__orders_reviews_state[['customer_state','count','mean','geolocation_lat','geolocation_lng']]
+
+#reset index
+customers__orders_reviews_state = customers__orders_reviews_state.reset_index(drop=True)
+
+#Some of the default values overlaps on the graph so we need to replace them with more propel values
+
+#replace cordinates of RN with lat= -5.83 and lng= -35.21
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'RN', 'geolocation_lat'] = -5.833
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'RN', 'geolocation_lng'] = -35.21
+
+#replace cordinates of AC with lat= -8.63 and lng= -69.78
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'AC', 'geolocation_lat'] = -8.63
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'AC', 'geolocation_lng'] = -69.78
+
+#replace cordinates of GO with lat= -15.78 and lng= -50.69
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'GO', 'geolocation_lat'] = -15.78
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'GO', 'geolocation_lng'] = -50.69
+
+#replaces cordinates of PA with lat= -5.93 and lng= -52.27
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PA', 'geolocation_lat'] = -5.93
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PA', 'geolocation_lng'] = -52.27
+
+#replace cordinates of BA with lat= -12.29 and lng= -42.34
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'BA', 'geolocation_lat'] = -12.29
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'BA', 'geolocation_lng'] = -42.34
+
+#replace cordinates of PE with lat= -8.59 and lng= -38.34
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PE', 'geolocation_lat'] = -8.59
+customers__orders_reviews_state.loc[customers__orders_reviews_state['customer_state'] == 'PE', 'geolocation_lng'] = -38.34
+
+
+#Graph 7
+churn = customer_counter.head(5).copy(deep=True)
+churn.rename(columns={'order_count': 'Orders', 'num_customer' : 'Customers', 'percentage_customer' : 'Percentage'}, inplace=True)
+churn['Percentage'] = pd.Series([round(val, 2) for val in churn['Percentage']])
+churn['Percentage'] = churn['Percentage'].astype(str)
+churn['Percentage'] = churn['Percentage'] + '%'
+churn['Customers'] = churn['Customers'].astype(str)
+churn['Customers'] = churn['Customers'].replace(['90557', '2573'], ['90,557', '2,573'])
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
 
-
-
-#AQUI EMPIEZA EL DASHBOARD
+# DASHBOARD
 # Row A
 a1, a2 = st.columns(2)
 a1.image(Image.open('Data_analysis/figures/masterlogo.png'))
+a1.image(Image.open('Data_analysis/figures/logo-olist.png'))
+a1.metric("2017-2018 Growth",format(products_Maximun["%Growth"].iloc[0],'.2f')+'%')
 with a2:
-    st.markdown('''# Brazilian E-Commerce Dashboard
-    c10-data-modeling team
-    - Gabriela Gutierrez    - Daniel Reyes
-    - Felipe Saldarriaga    - Leandro Peñaloza
-    - Martin Cruz           - Miguel Rodriguez
+    st.markdown('# Brazilian E-Commerce Dashboard')
+    st.markdown('''## c10-data-modeling team
+    - Gabriela Gutierrez    - Felipe Saldarriaga 
+    - Daniel Reyes          - Miguel Rodriguez
+    - Leandro Peñaloza      - Martin Cruz
     ''')
-    a2.metric("2017-2018 Growth",format(products_Maximun["%Growth"].iloc[0],'.2f')+'%')
+
 
 # Row B
 b1, b2 = st.columns(2)
 with b1:
-    b1.markdown('### Purchases Order by Day and Time')
-    heatmap1 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep')
-    b1.write(heatmap1)
-
+    #st.write(heatmap1)
+    b1.markdown('### Revenue per year of the Top 3 states (G1)')
+    bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city")
+    b1.write(bar1)
+   
 with b2:
-    b2.markdown('### Order size')
-    heatmap2 = px.imshow(ord_daytime.iloc[:,7:], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep')
-    b2.write(heatmap2)
+    #st.write(heatmap2)
+    b2.markdown('### Graph 2')
+    bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english')
+    b2.write(bar2)
 
-st.markdown('### Percentage of Orders by Status')
-heatmap3 = px.imshow(ord_sy, text_auto=True,color_continuous_scale='deep', labels=dict(x='Order Status', y='Purchase Year'), y=['2016','2017','2018'])
-heatmap3.update_layout(coloraxis_showscale=False)
-st.write(heatmap3)
+
+#h
+b3, b4 =st.columns(2)
+with b3:
+    b3.markdown('### Graph 3')
+    bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english')
+    b3.write(bar3)
+
+
+with b4:
+    b4.markdown("### Graph 4")
+    print(best_selling_date,'Total Revenue($): ',format(best_selling_revenue*1000,'.2f'))
+    bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep')
+    b4.write(bar4)
+    
 
 # Row C
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.markdown('Revenue and Orders by Month (2016-2018)')
-    st.bar_chart(data=N_ord_by_M['revenue($R1000)'],width=300, height=400)
+    st.markdown('### Graph 5')
+    pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status')
+    pie_actual_late_delivery1.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
+    pie_actual_late_delivery1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
+    st.write(pie_actual_late_delivery1)
 
 with c2:
-    st.markdown('💡 The representative maximun value at 2017 was a blackfriday campaing')
-    st.bar_chart(data=ord_Nov_17['revenue($R1000)'],width=300, height=400)        
-
+    st.markdown('### Graph 6')
+    # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
+    bar6 = px.density_mapbox(customers__orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
+                            z="review_score", radius=3, mapbox_style="open-street-map",
+                            range_color=(0, 5),
+                            color_continuous_scale = px.colors.diverging.RdYlGn
+                            ,zoom=2, center={"lat": -10.0, "lon": -51.0})
+    bar6.update_layout(title_text="Reviews by customers")
+    c2.write(bar6)      
 with c3:
-    c3.markdown('#### Daily No of Orders by Time')
-    px_bloxplot = px.box(ord_time, x="purchase_time", y="order_id", color="purchase_time",notched=True, category_orders={'purchase_time':["Morning","Afternoon","Evening","Night"]})
-    px_bloxplot.update_layout(showlegend=False,width=300,height=400,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15),xaxis_title='',yaxis_title='')
-    c3.write(px_bloxplot)
+    st.markdown('### Graph 6.1')
+    #plot bubble chart of customers__orders_reviews_state
+    bar61 = px.scatter_geo(customers__orders_reviews_state, lat="geolocation_lat", lon="geolocation_lng",
+                            color="mean", size="count",size_max=50,
+                            range_color=(2, 5),
+                            color_continuous_scale = px.colors.diverging.RdYlGn,
+                            hover_name="customer_state",
+                            hover_data=["count", "mean"],
+                            text = "count",
+                            center={"lat": -10.0, "lon": -51.0},
+                            scope="south america",
+                            template="plotly_dark")
+
+    bar61.update_layout(title_text="Reviews by customers")
+    c3.write(bar61)
 
 #Row D
-d1, d2, d3 = st.columns(3)
+d1, d2 = st.columns(2)
 
 with d1:
-    plost.hist(data=daily_ord, x="order_id", bin=50)
+    st.markdown('### Graph 7')
+    bar7 = go.Figure(data=[go.Table(
+        header=dict(values=list(churn.columns),
+                    fill_color='paleturquoise',
+                    align='left'),
+        cells=dict(values=[churn.Orders, churn.Customers, churn.Percentage],
+                fill_color='lavender',
+                align='left'))
+    ])
+
+    bar7.update_layout(
+            title_text = 'Churn Analysis'
+        )
+
+    d1.write(bar7)
 
 with d2:
-    plost.hist(data=daily_ord, x="order_size",y='price', aggregate='sum', bin=50)
-
-with d3:
-    st.markdown("Orders at Workdays vs Weekends")
-    plost.bar_chart(data=ord_wd,bar='indice:N',value=['order_id','order_size'],group='value',legend=None)
-    #requires to fix grouping, by Order_id Order_size not week weekend
-    
-top1, top2 = st.columns(2)
-with top1:
-    top1.markdown('''### 🏆 Top 20 products by category
-    Products grouped by its category according three different criteria:
-    - Revenue generated ($).
-    - Number of orders (#).
-    - Size of the orders ($).''')
-    criteria = st.multiselect(
-        '¿Which criteria(s) do you want to display for the top 20 products?',
-        ['revenue($R1000)', 'no_of_order', 'ord_size($R)'],
-        ['revenue($R1000)'])
-
-with top2:    
-    top2.markdown('#### Analysis By Product Category')
-    bar_top_20 = px.bar(prod_rank_top20, x=criteria, y=prod_rank_top20.index, text_auto= True)
-    bar_top_20.update_layout(showlegend=False,width=500,height=600,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15),xaxis_title=None,yaxis_title=None,yaxis={'categoryorder':'total ascending'})
-    bar_top_20.update_traces(textfont_size=18, textposition='inside')
-    top2.write(bar_top_20)
-
-
-st.markdown('## ⏱ Delivery Performance')
-#Row E
-e1,e2 = st.columns(2)
-
-with e1:
-    st.markdown('### Range of Delivered Day')
-    plost.hist(data=deliver_ord[['order_id','delivered_days']], x='delivered_days', bin=5,height=400,width=200)
-
-with e2:
-    st.markdown('### 🥇 Delivered days of top 5 product categories')    
-    px_top5box = px.box(deli_top_5, x="product_category_name_english", y="delivered_days", color="product_category_name_english",notched=True)
-    px_top5box.update_layout(showlegend=False,width=600,height=400,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15),xaxis_title=None,yaxis_title='Days taken to deliver')
-    e2.write(px_top5box)
-    
-st.markdown('### 🔮 Real Delivery vs Estimation')
-#Row F
-f1,f2,f3 = st.columns(3)
-with f1:
-    f1.markdown('#### Actual Deliver vs Estimation Orders by status')
-    pie_actual_late_delivery = px.pie(deliver, values='order_id', names = 'status', hover_name='status')
-    pie_actual_late_delivery.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
-    pie_actual_late_delivery.update_traces(textposition='inside', textinfo='percent+label') # this function adds labels to the pie chart
-    f1.write(pie_actual_late_delivery)
-
-with f2:
-    f2.markdown('#### Late Orders by days of delayment')
-    pie_late_days_delivery = px.pie(late_deli_status, values='order_id', names = 'status', hover_name='status')
-    pie_late_days_delivery.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
-    pie_late_days_delivery.update_traces(textposition='inside', textinfo='percent+label') # this function adds labels to the pie chart
-    f2.write(pie_late_days_delivery)
-
-with f3:
-    f3.markdown('#### Average Review Score')    
-    bar_avg_review = px.bar(uni_review_pt, x='indice', y='review_score',text= 'review_score',text_auto= '.2f', labels={'indice':'','review_score':'Review Score'})
-    bar_avg_review.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
-    bar_avg_review.update_traces(textposition='inside')
-    f3.write(bar_avg_review)
-
-#Row G
-g1,g2 = st.columns(2)
-with g1:
-    st.markdown('### 🚚 Late Delivers by Carrier')
-    plost.donut_chart(data=deli_to_carrier, theta='late deliver', color='status', legend='bottom')
-
-with g2:
-    st.markdown('### 🕵🏼‍♂️Late Deliver by Seller')
-    st.write(seller_top_10)
-
-st.markdown('## 🏃🏼‍♀️💨 Churn Analysis')
-
-# Row H
-h1, h2 = st.columns(2)
-with h1:
-    st.write(customer_counter)
-
-with h2:
-    st.markdown('''
-- 96.9% of the customers just made ONE order between 2016-2018.
-- 2.76% make a second order.
-It shows us that the churn is a huge problem at this E-commerce.
-''')
-
-
-st.markdown('## 💱Payments')
-st.markdown('### Payment method')
-pie_payment = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type')
-pie_payment.update_traces(textposition='inside', textinfo='percent+label') # this function adds labels to the pie chart
-st.write(pie_payment)
-st.markdown('''74% of the customers paid via credit card. 
-Since having more payment methods does not seem to impact customer retention, we suggest the e-commerce sticks with credit card and 
-debit card payments''')
+    st.markdown('### Graph 8')
+    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type')
+    pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
+    d2.write(pie_payment1)
