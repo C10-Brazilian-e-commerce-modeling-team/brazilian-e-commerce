@@ -283,6 +283,15 @@ payments_df = pd.DataFrame(data=data)
 payments_df.rename(columns = {'payment_type':'count'}, inplace = True)
 payments_df['payment_type'] = payments_df.index
 
+payments_dict= {'credit_card':'Credit Card',
+'boleto':'Ticket',
+'voucher':'Voucher',
+'debit_card':'Debit Card',
+'not_defined':'Not Defined'
+}
+
+payments_df['payment_type'] = payments_df['payment_type'].apply(lambda x: payments_dict[x])
+
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------
 import plotly.graph_objects as go
@@ -311,6 +320,18 @@ srb.drop([0, 1, 2], inplace=True)
 total_sales_categories_year = products_df[['order_id','purchase_year','price','product_category_name_english']]
 top5_cat_year = total_sales_categories_year.groupby(['purchase_year','product_category_name_english'],as_index=False).agg({'price':'sum'}).sort_values(by=['purchase_year','price'], ascending=False)
 top5_cat_year = top5_cat_year.groupby('purchase_year').head(5).reset_index(drop=True)
+product_dict={'health_beauty':'Health & Beauty',
+              'watches_gifts':'Watches & Gifts',
+                'bed_bath_table':'Bed & Baths',
+                'sports_leisure':'Sports & Leisure',
+                'computers_accessories':'Computers & Accessories',
+                'furniture_decor':'Furniture & Decoration',
+                'perfumery':'Perfumery',
+                'toys':'Toys',
+                'consoles_games':'Consoles & Games'}
+
+top5_cat_year['product_category_name_english'] = top5_cat_year['product_category_name_english'].apply(lambda x: product_dict[x])
+
 
 #Graph 3
 df_state_treemap = products_df[['order_id','purchase_year','price','product_category_name_english','customer_state']]
@@ -326,7 +347,7 @@ df_state_treemap_3_states = df_state_treemap_3_states.groupby('customer_state').
 
 top_3 = df_state_treemap_3_states.groupby('customer_state').sum().sort_values('pricesum', ascending=False).head(3).index
 df_state_treemap_3_states = df_state_treemap_3_states[df_state_treemap_3_states.customer_state.isin(top_3)]
-
+df_state_treemap_3_states['product_category_name_english'] = df_state_treemap_3_states['product_category_name_english'].apply(lambda x: product_dict[x])
 #Graph 4
 
 best_selling_date = ord_Nov_17['revenue($R1000)'].idxmax()
@@ -449,14 +470,14 @@ with a2:
 b1, b2 = st.columns(2)
 with b1:
     #st.write(heatmap1)
-    b1.markdown('### Revenue from the Top 3 States (G1)')
+    b1.markdown('### 🥇 Revenue from the Top 3 States (G1)')
     bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city",
                   labels=dict(date='Date',customer_city='Customer City'))
     b1.write(bar1)
    
 with b2:
     #st.write(heatmap2)
-    b2.markdown('### Revenue from the Top 5 Product Categories (G2)')
+    b2.markdown('### 💎 Revenue from the Top 5 Product Categories (G2)')
     bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english', 
                   labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'))
     b2.write(bar2)
@@ -464,13 +485,13 @@ with b2:
 #h
 b3, b4 =st.columns(2)
 with b3:
-    b3.markdown('### Share of revenue at Top 3 States (G3)')
+    b3.markdown('### 🔝 Share of revenue at Top 3 States (G3)')
     bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english')
     b3.write(bar3)
 
 
 with b4:
-    b4.markdown("### Orders distribuited by Time and Day (G4)")
+    b4.markdown("### ⏰ Orders distribuited by Time and Day (G4)")
     bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep')
     bar4.update_yaxes(title=None,visible=True, showticklabels=True)
     bar4.update_xaxes(title=None,visible=True, showticklabels=True)
@@ -478,7 +499,7 @@ with b4:
     
 c1,c2 = st.columns(2)
 with c1:
-    st.markdown('### On Time and Late Deliveries (G5)')
+    st.markdown('### 🚛 On Time vs Late Deliveries (G5)')
     pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status',color_discrete_sequence=px.colors.sequential.Agsunset)
     pie_actual_late_delivery1.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
     pie_actual_late_delivery1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
@@ -492,7 +513,7 @@ d1, d2 = st.columns(2)
 
 
 with d1:
-    st.markdown('### Review Score per user (G6.1)')
+    st.markdown('### 💙 Review Score per User (G6.1)')
     # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
     bar6 = px.density_mapbox(customers__orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
                             z="review_score", radius=3, mapbox_style="open-street-map",
@@ -502,7 +523,7 @@ with d1:
     d1.write(bar6)      
 
 with d2:
-    st.markdown('### Graph 6.2')
+    st.markdown('### 🤔 Volume of Reviews per State (G6.2)')
     # creates a choropleth map using the lat_lng column and state_id_map
     bar62 = px.choropleth(customers__orders_reviews_state, geojson=brazil_geo, locations="customer_state",
                     color="mean",
@@ -534,8 +555,8 @@ with e1:
 
 
 with e2:
-    st.markdown('### Payment Preferences (G8)')
-    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type')
+    st.markdown('### 💱 Payment Preferences (G8)')
+    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type',color_discrete_sequence=px.colors.sequential.Agsunset)
     pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
     e2.write(pie_payment1)
 
