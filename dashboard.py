@@ -55,9 +55,6 @@ orders_df = orders_df.assign(
 #add the time_periods
 orders_df["purchase_time"]= orders_df["purchase_hour"].apply(time_periods)
 
-
-
-
 ### Merging the datasets
 detail_df= (((order_items.merge(orders_df, how="left",on='order_id'))
                  .merge(products, how="left",on='product_id'))
@@ -74,8 +71,6 @@ detail_df= detail_df[detail_df['order_status']=='delivered']
 # Create a new product dataframe with the columns of the detailed df
 products_df = detail_df[['order_id', 'product_id','price', 'order_status', 'purchase_date','purchase_MMYYYY', 'purchase_year','purchase_month','purchase_day','purchase_time','weekday','product_category_name_english', 'customer_unique_id', 'customer_state'
                          , 'order_delivered_customer_date', 'order_estimated_delivery_date','order_delivered_carrier_date','shipping_limit_date', 'seller_id']]
-
-
 
 
 #Calculating the growth for the Maximun historical compared with the previous year
@@ -119,7 +114,6 @@ ord_daytime = ord_day_time.pivot_table(values=['no_of_orders','order_size'], ind
 day_of_week = ['Monday', 'Tuesday', 'Wednesday','Thursday','Friday','Saturday','Sunday']
 ord_daytime = ord_daytime.reindex(index= ['Morning', 'Afternoon','Evening','Night'])
 ord_daytime = ord_daytime.reindex(columns= day_of_week, level = 'purchase_day')
-
 
 
 # Top Products
@@ -171,7 +165,6 @@ deliver_df=products_df.drop_duplicates(keep=False,inplace=False)
 # Unique order with its delivered day
 deliver_ord=deliver_df[['order_id','delivered_days']].drop_duplicates(keep=False)
 
-
 # unique order of delivered day and categories
 deliver_uni_ord=deliver_df[['order_id','delivered_days','product_category_name_english']].drop_duplicates(keep=False)
 deli_top_5= deliver_uni_ord[deliver_uni_ord['product_category_name_english'].isin(['bed_bath_table', 'health_beauty', 'watches_gifts','sports_leisure','computers_accessories'])]
@@ -191,11 +184,9 @@ df_order['time_to_shop']=df_order.groupby(['customer_unique_id']).cumcount() + 1
 customer_counter = df_order.groupby(['customer_unique_id']).count().reset_index()
 customer_counter["order_count"] = customer_counter["order_id"]
 
-
 customer_counter = customer_counter.drop(["order_id", "purchase_MMYYYY", "price", "time_to_shop","purchase_year"], axis=1)
 customer_counter = customer_counter.groupby(["order_count"]).count().reset_index().rename(columns={"customer_unique_id": "num_customer"})
 customer_counter["percentage_customer"] = 100.0 * customer_counter["num_customer"] / customer_counter["num_customer"].sum()
-
 
 #Payments
 payments = pd.read_csv('Data_analysis/datasets/payments.csv')
@@ -214,7 +205,6 @@ payments_dict= {'credit_card':'Credit Card',
 }
 
 payments_df['payment_type'] = payments_df['payment_type'].apply(lambda x: payments_dict[x])
-
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------
 import plotly.graph_objects as go
@@ -255,7 +245,6 @@ product_dict={'health_beauty':'Health & Beauty',
 
 top5_cat_year['product_category_name_english'] = top5_cat_year['product_category_name_english'].apply(lambda x: product_dict[x])
 
-
 #Graph 3
 df_state_treemap = products_df[['order_id','purchase_year','price','product_category_name_english','customer_state']]
 df_state_treemap = df_state_treemap.groupby(['customer_state','product_category_name_english'],as_index=False).agg({'price':['sum','count']})
@@ -271,19 +260,16 @@ df_state_treemap_3_states = df_state_treemap_3_states.groupby('customer_state').
 top_3 = df_state_treemap_3_states.groupby('customer_state').sum().sort_values('pricesum', ascending=False).head(3).index
 df_state_treemap_3_states = df_state_treemap_3_states[df_state_treemap_3_states.customer_state.isin(top_3)]
 df_state_treemap_3_states['product_category_name_english'] = df_state_treemap_3_states['product_category_name_english'].apply(lambda x: product_dict[x])
-#Graph 4
 
+#Graph 4
 best_selling_date = ord_Nov_17['revenue($R1000)'].idxmax()
 best_selling_revenue = ord_Nov_17['revenue($R1000)'].max()
 
 #Graph 6
-# Reviews
 customers_orders_reviews = pd.read_csv('Data_analysis/datasets/processed/customers_orders_reviews.csv')
-
 geolocation_df = pd.read_csv('Data_analysis/datasets/geolocation.csv')
 
 #Graph 6.1 
-
 # group customers__orders_reviews by state aggregation of the count of reviews and review_score mean
 customers__orders_reviews_state = customers_orders_reviews.groupby(['customer_state'])['review_score'].agg(['count', 'mean'])
 
@@ -315,8 +301,6 @@ for state in brazil_geo['features']:
 # add regiao_id to the customers__orders_reviews_state
 customers__orders_reviews_state['regiao_id'] = customers__orders_reviews_state['customer_state'].map(state_id_map)
 
-
-
 #Graph 7
 churn = customer_counter.head(5).copy(deep=True)
 churn.rename(columns={'order_count': 'Orders', 'num_customer' : 'Customers', 'percentage_customer' : 'Percentage'}, inplace=True)
@@ -327,8 +311,6 @@ churn['Customers'] = churn['Customers'].astype(str)
 churn['Customers'] = churn['Customers'].replace(['90557', '2573'], ['90,557', '2,573'])
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 
 
 # DASHBOARD
@@ -349,30 +331,33 @@ with a2:
 # Row B
 b1, b2 = st.columns(2)
 with b1:
-    #st.write(heatmap1)
     b1.markdown('### 🥇 Revenue from the Top 3 States (G1)')
     bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city",
-                  labels=dict(date='Date',customer_city='Customer City'))
+                  labels=dict(date='Date',customer_city='Customer City'),width=700,height=400)
+    bar1.update_layout(legend=dict(yanchor="top",y=0.40,xanchor="left",x=0.75))
+    bar1.update_xaxes(title='Revenue ($R1000)',visible=True, showticklabels=True)
+    bar1.update_yaxes(title=None,visible=True, showticklabels=True)
     b1.write(bar1)
    
 with b2:
-    #st.write(heatmap2)
-    b2.markdown('### 💎 Revenue from the Top 5 Product Categories (G2)')
+    b2.markdown('### 💎 Revenue from the Top 5 Categories (G2)')
     bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english', 
-                  labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'))
+                  labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'),width=600,height=400)
+    bar2.update_xaxes(title='Years (2017-2018)',visible=True, showticklabels=False)
     b2.write(bar2)
 
-#h
+
+#b part 2
 b3, b4 =st.columns(2)
 with b3:
     b3.markdown('### 🔝 Share of revenue at Top 3 States (G3)')
-    bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english')
+    bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english',width=650,height=450)
     b3.write(bar3)
 
 
 with b4:
     b4.markdown("### ⏰ Orders distribuited by Time and Day (G4)")
-    bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep')
+    bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep',width=600,height=450)
     bar4.update_yaxes(title=None,visible=True, showticklabels=True)
     bar4.update_xaxes(title=None,visible=True, showticklabels=True)
     b4.write(bar4)
@@ -391,18 +376,7 @@ c2.metric('Total Revenue ($): ',format(best_selling_revenue*1000,'.2f'))
 # Row C
 d1, d2 = st.columns(2)
 
-
 with d1:
-    st.markdown('### 💙 Review Score per User (G6.1)')
-    # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
-    bar6 = px.density_mapbox(customers_orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
-                            z="review_score", radius=3, mapbox_style="open-street-map",
-                            range_color=(0, 5),
-                            color_continuous_scale = px.colors.diverging.RdYlGn
-                            ,zoom=2, center={"lat": -10.0, "lon": -51.0})
-    d1.write(bar6)      
-
-with d2:
     st.markdown('### 🤔 Volume of Reviews per State (G6.2)')
     # creates a choropleth map using the lat_lng column and state_id_map
     bar62 = px.choropleth(customers__orders_reviews_state, geojson=brazil_geo, locations="customer_state",
@@ -413,11 +387,20 @@ with d2:
                     scope="south america",
                     template="plotly_dark")
     bar62.update_geos(fitbounds="locations")
-    d2.write(bar62)
+    bar62.update_coloraxes(showscale=False)
+    d1.write(bar62)
+
+with d2:
+    st.markdown('### 💙 Review Score per User (G6.1)')
+    # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
+    bar6 = px.density_mapbox(customers_orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
+                            z="review_score", radius=3, mapbox_style="open-street-map",
+                            range_color=(0, 5),
+                            color_continuous_scale = px.colors.diverging.RdYlGn
+                            ,zoom=2, center={"lat": -10.0, "lon": -51.0},width=600,height=450,
+                            labels=dict(review_score='Review Score'))
+    d2.write(bar6)
     
-
-
-
 #Row E
 e1, e2 = st.columns(2)
 
@@ -436,7 +419,7 @@ with e1:
 
 with e2:
     st.markdown('### 💱 Payment Preferences (G8)')
-    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type',color_discrete_sequence=px.colors.sequential.Agsunset)
+    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type',color_discrete_sequence=px.colors.sequential.Agsunset,width=600,height=450)
     pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
     e2.write(pie_payment1)
 
