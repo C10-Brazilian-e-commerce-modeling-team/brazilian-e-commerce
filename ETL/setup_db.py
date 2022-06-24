@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.sql import text
-from constants import SQL_DIR, TABLE_NAMES
-from cfg import DB_CONNSTR
+from utils.constants import SQL_DIR, TABLE_NAMES
+from utils.cfg import DB_CONNSTR
 
 
 engine = create_engine(DB_CONNSTR)
