@@ -310,22 +310,77 @@ churn['Percentage'] = churn['Percentage'] + '%'
 churn['Customers'] = churn['Customers'].astype(str)
 churn['Customers'] = churn['Customers'].replace(['90557', '2573'], ['90,557', '2,573'])
 
+
+#Graph 9
+olist_revs = pd.read_csv('Data_analysis/datasets/processed/nlp_to_olist.csv') 
+external_revs = pd.read_csv('Data_analysis/datasets/processed/nlp_to_external_data.csv')
+
+filt = olist_revs.groupby(['category'])['sentiment'].count() >= 400
+mean_olist = olist_revs.groupby(['category'])[['sentiment']].mean()
+filt_olist = mean_olist[filt]
+filt_olist.reset_index(inplace=True)
+
+filt_olist.drop(5, inplace=True)
+filt_olist.reset_index(inplace=True)
+
+gped_external = external_revs.groupby(['category'])[['sentiment']].mean()
+gped_external.reset_index(inplace=True)
+
+translated_cats = pd.read_csv('Data_analysis/datasets/product_category_name_translation.csv')
+translated_cats.rename({'product_category_name':'category'}, axis=1, inplace=True)
+
+translated_revs = pd.merge(gped_external, translated_cats, on='category', how='left')
+
+translated_revs.fillna('sports_leisure', inplace=True)
+translated_revs.sort_values(by='product_category_name_english', inplace=True)
+
+category_dict = {'auto': 'Auto',
+ 'baby': 'Baby',
+ 'bed_bath_table': 'Bed & Baths',
+ 'computers_accessories': 'Computers & Accessories',
+ 'consoles_games': 'Consoles & Games',
+ 'electronics': 'Electronics',
+ 'fashion_bags_accessories': 'Fashion & Bags',
+ 'furniture_decor': 'Furniture & Decoration',
+ 'garden_tools': 'Garden Tools',
+ 'health_beauty': 'Health & Beauty',
+ 'housewares': 'Housewares',
+ 'luggage_accessories': 'Luggages',
+ 'office_furniture': 'Office Furniture',
+ 'perfumery': 'Perfumery',
+ 'pet_shop': 'Pet Shop',
+ 'sports_leisure': 'Sports & Leisure',
+ 'stationery': 'Stationery',
+ 'telephony': 'Telephony',
+ 'toys': 'Toys',
+ 'watches_gifts': 'Watches & Gifts'}
+
+filt_olist['category'] = filt_olist['category'].apply(lambda x: category_dict[x])
+
+Total_rev_f = float(products_Maximun[2018])*1000
+
+Total_rev_f = format(Total_rev_f,'.2f')
+
+best_sell_f = best_selling_revenue*1000
+
+best_sell_f = format(best_sell_f,'.2f')
+
+
 #----------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 # DASHBOARD
+
 # Row A
 a1, a2 = st.columns(2)
-a1.image(Image.open('Data_analysis/figures/masterlogo.png'))
 a1.image(Image.open('Data_analysis/figures/logo-olist.png'))
-a1.metric("2017-2018 Growth",format(products_Maximun["%Growth"].iloc[0],'.2f')+'%')
-with a2:
-    st.markdown('# Brazilian E-Commerce Dashboard')
-    st.markdown('''## c10-data-modeling team
-    - Gabriela Gutierrez    - Felipe Saldarriaga 
-    - Daniel Reyes          - Miguel Rodriguez
-    - Leandro Peñaloza      - Martin Cruz
-    ''')
+a2.title('Brazilian E-Commerce Dashboard')
+
+st.markdown('***')
+
+a3,a4 =st.columns(2)
+a3.metric(label='Total Revenue ', value='$'+f'{float(Total_rev_f):,}', delta=format(products_Maximun["%Growth"].iloc[0],'.2f')+'%')
+a4.metric(label='Record date of Revenue',value=best_selling_date,delta='$'+f'{float(best_sell_f):,}')
 
 
 # Row B
@@ -333,8 +388,8 @@ b1, b2 = st.columns(2)
 with b1:
     b1.markdown('### 🥇 Revenue from the Top 3 States (G1)')
     bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city",
-                  labels=dict(date='Date',customer_city='Customer City'),width=700,height=400)
-    bar1.update_layout(legend=dict(yanchor="top",y=0.40,xanchor="left",x=0.75))
+                  labels=dict(date='Date',customer_city='Customer City'),width=600,height=350)
+    bar1.update_layout(legend=dict(yanchor="top",y=0.40,xanchor="left",x=0.75),margin=dict(l=1,r=2,b=1,t=1))
     bar1.update_xaxes(title='Revenue ($R1000)',visible=True, showticklabels=True)
     bar1.update_yaxes(title=None,visible=True, showticklabels=True)
     b1.write(bar1)
@@ -342,8 +397,9 @@ with b1:
 with b2:
     b2.markdown('### 💎 Revenue from the Top 5 Categories (G2)')
     bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english', 
-                  labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'),width=600,height=400)
+                  labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'),width=600,height=350)
     bar2.update_xaxes(title='Years (2017-2018)',visible=True, showticklabels=False)
+    bar2.update_layout(margin=dict(l=1,r=1,b=1,t=1))
     b2.write(bar2)
 
 
@@ -351,7 +407,8 @@ with b2:
 b3, b4 =st.columns(2)
 with b3:
     b3.markdown('### 🔝 Share of revenue at Top 3 States (G3)')
-    bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english',width=650,height=450)
+    bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english',width=600,height=350)
+    bar3.update_layout(margin=dict(l=1,r=1,b=1,t=1))
     b3.write(bar3)
 
 
@@ -360,24 +417,30 @@ with b4:
     bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep',width=600,height=450)
     bar4.update_yaxes(title=None,visible=True, showticklabels=True)
     bar4.update_xaxes(title=None,visible=True, showticklabels=True)
+    bar4.update_layout_images(margin=dict(l=1,r=1,b=1,t=1))
     b4.write(bar4)
     
 c1,c2 = st.columns(2)
 with c1:
     st.markdown('### 🚛 On Time vs Late Deliveries (G5)')
-    pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status',color_discrete_sequence=px.colors.sequential.Agsunset)
+    pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status',color_discrete_sequence=['DarkBlue','DarkRed'],width=600,height=450)
     pie_actual_late_delivery1.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
     pie_actual_late_delivery1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
     st.write(pie_actual_late_delivery1)
-c2.metric('Record date of Revenue:',best_selling_date)
-c2.metric('Total Revenue ($): ',format(best_selling_revenue*1000,'.2f'))
+with c2:
+    st.markdown('### 💱 Payment Preferences (G8)')
+    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type',color_discrete_sequence=px.colors.sequential.Agsunset,width=600,height=450)
+    pie_payment1.update_layout(showlegend=True,width=600,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
+    pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
+    c2.write(pie_payment1)
+
 
 
 # Row C
 d1, d2 = st.columns(2)
 
 with d1:
-    st.markdown('### 🤔 Volume of Reviews per State (G6.2)')
+    st.markdown('### 🤔 Volume of Reviews per State (G6.1)')
     # creates a choropleth map using the lat_lng column and state_id_map
     bar62 = px.choropleth(customers__orders_reviews_state, geojson=brazil_geo, locations="customer_state",
                     color="mean",
@@ -385,20 +448,22 @@ with d1:
                     hover_name="customer_state",
                     hover_data=["count", "mean"], featureidkey="properties.sigla",
                     scope="south america",
-                    template="plotly_dark")
+                    template="plotly_dark",width=600,height=450)
     bar62.update_geos(fitbounds="locations")
     bar62.update_coloraxes(showscale=False)
+    bar62.update_layout(margin=dict(l=1,r=1,b=1,t=1))
     d1.write(bar62)
 
 with d2:
-    st.markdown('### 💙 Review Score per User (G6.1)')
+    st.markdown('### 💙 Review Score per User (G6.2)')
     # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
     bar6 = px.density_mapbox(customers_orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
                             z="review_score", radius=3, mapbox_style="open-street-map",
                             range_color=(0, 5),
                             color_continuous_scale = px.colors.diverging.RdYlGn
-                            ,zoom=2, center={"lat": -10.0, "lon": -51.0},width=600,height=450,
+                            ,zoom=3, center={"lat": -10.0, "lon": -51.0},width=600,height=450,
                             labels=dict(review_score='Review Score'))
+    bar6.update_layout()
     d2.write(bar6)
     
 #Row E
@@ -409,23 +474,67 @@ with e1:
     bar7 = go.Figure(data=[go.Table(
         header=dict(values=list(churn.columns),
                     fill_color='darkblue',
-                    align='center'),
+                    align='center',
+                    font_size=16),
         cells=dict(values=[churn.Orders, churn.Customers, churn.Percentage],
                 fill_color='DarkSlateBlue',
-                align='center'))])
-
+                align='center',
+                font_size=14))])
+    bar7.update_layout(margin=dict(l=1,r=1,b=1,t=1),width=600)
+    e1.markdown('\n')
+    e1.markdown('\n')
+    e1.markdown('\n')
+    e1.markdown('\n')
+    e1.markdown('\n')
+    e1.markdown('\n')
     e1.write(bar7)
 
 
 with e2:
-    st.markdown('### 💱 Payment Preferences (G8)')
-    pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type',color_discrete_sequence=px.colors.sequential.Agsunset,width=600,height=450)
-    pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
-    e2.write(pie_payment1)
+    #graph 9
+    categories = filt_olist['category']
+
+    radar_graph = go.Figure()
+
+    radar_graph.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0,1],
+                
+            )),
+            showlegend=False,
+            template="plotly_dark")
+
+    radar_graph.add_trace(go.Scatterpolar(
+        r=filt_olist['sentiment'],
+        theta=categories,
+        name='Olist',
+    ))
 
 
+    radar_graph.add_trace(go.Scatterpolar(
+        r=translated_revs['sentiment'],
+        theta=categories,
+        name='Competitor',
+    ))
+    radar_graph.update_layout(margin=dict(l=1,r=1,b=20,t=20))
+    radar_graph.update_layout(width=600,height=400)
+    e2.markdown('### 🐱‍🚀 Sentiment Benchmarking (G9)')
+    
+    e2.write(radar_graph)
 
-
+st.markdown('***')
+a4,a5,a6,a7 = st.columns(4)
+a4.image(Image.open('Data_analysis/figures/masterlogo.png'))
+a5.markdown(''' ### Cohort 10 [CX] 
+[Data Modeling Team](https://github.com/C10-Brazilian-e-commerce-modeling-team/brazilian-e-commerce)''')
+a6.markdown('''- Gabriela Gutierrez [@GabyGO2108](https://github.com/GabyGO2108)
+- Daniel Reyes [@danieldhats7](https://github.com/danieldhats7)
+- Leandro Peñaloza [@leopensaa](https://github.com/leopensaa)''')
+a7.markdown('''- Felipe Saldarriaga [@felipesaldata](https://github.com/felipesaldata)
+- Alejandro Rodriguez [@alexrods](https://github.com/alexrods)
+- Martin Cruz [@martin-crdev](https://github.com/martin-crdev)''')
 
     
 
