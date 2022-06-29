@@ -6,6 +6,8 @@ import seaborn as sns
 import altair as alt
 import plotly.express as px
 import json
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 #dashboard
 import streamlit as st
@@ -333,6 +335,18 @@ translated_revs = pd.merge(gped_external, translated_cats, on='category', how='l
 
 translated_revs.fillna('sports_leisure', inplace=True)
 translated_revs.sort_values(by='product_category_name_english', inplace=True)
+translated_revs.reset_index(inplace=True)
+
+categories = filt_olist['category']
+diff_btew_categories = translated_revs['sentiment'] - filt_olist['sentiment']
+
+df_diff = pd.concat([diff_btew_categories, categories], axis=1)
+df_diff.sort_values(by='sentiment', inplace=True)
+
+best_mlibre = translated_revs[translated_revs['product_category_name_english'].isin(df_diff['category'][:5])]
+worst_mlibre = translated_revs[translated_revs['product_category_name_english'].isin(df_diff['category'][15:])]
+best_olist = filt_olist[filt_olist['category'].isin(df_diff['category'][:5])]
+worst_olist = filt_olist[filt_olist['category'].isin(df_diff['category'][15:])]
 
 category_dict = {'auto': 'Auto',
  'baby': 'Baby',
@@ -355,8 +369,14 @@ category_dict = {'auto': 'Auto',
  'toys': 'Toys',
  'watches_gifts': 'Watches & Gifts'}
 
-filt_olist['category'] = filt_olist['category'].apply(lambda x: category_dict[x])
+best_mlibre['product_category_name_english'] = best_mlibre['product_category_name_english'].map(category_dict)
+best_olist['category'] = best_olist['category'].map(category_dict)
 
+worst_olist['category'] = worst_olist['category'].map(category_dict)
+worst_mlibre['product_category_name_english'] = worst_mlibre['product_category_name_english'].map(category_dict)
+
+
+#data for metrics
 Total_rev_f = float(products_Maximun[2018])*1000
 
 Total_rev_f = format(Total_rev_f,'.2f')
@@ -386,7 +406,7 @@ a4.metric(label='Record date of Revenue',value=best_selling_date,delta='$'+f'{fl
 # Row B
 b1, b2 = st.columns(2)
 with b1:
-    b1.markdown('### 🥇 Revenue from the Top 3 States (G1)')
+    b1.markdown('### 🥇 Revenue from the Top 3 States')
     bar1 = px.bar(srb, x="revenue($R1000)", y="date", color="customer_city",
                   labels=dict(date='Date',customer_city='Customer City'),width=600,height=350)
     bar1.update_layout(legend=dict(yanchor="top",y=0.40,xanchor="left",x=0.75),margin=dict(l=1,r=2,b=1,t=1))
@@ -395,7 +415,7 @@ with b1:
     b1.write(bar1)
    
 with b2:
-    b2.markdown('### 💎 Revenue from the Top 5 Categories (G2)')
+    b2.markdown('### 💎 Top 5 Categories per Revenue')
     bar2 = px.bar(top5_cat_year.head(10),x='purchase_year',y='price',color='product_category_name_english', 
                   labels=dict(purchase_year='Year', price='Revenue',product_category_name_english='Product Category'),width=600,height=350)
     bar2.update_xaxes(title='Years (2017-2018)',visible=True, showticklabels=False)
@@ -406,14 +426,14 @@ with b2:
 #b part 2
 b3, b4 =st.columns(2)
 with b3:
-    b3.markdown('### 🔝 Share of revenue at Top 3 States (G3)')
+    b3.markdown('### 🔝 Top 3 States Share of Revenue')
     bar3 = px.treemap(df_state_treemap_3_states,path=['customer_state','product_category_name_english'],values='pricesum',color='product_category_name_english',width=600,height=350)
     bar3.update_layout(margin=dict(l=1,r=1,b=1,t=1))
     b3.write(bar3)
 
 
 with b4:
-    b4.markdown("### ⏰ Orders distribuited by Time and Day (G4)")
+    b4.markdown("""### ⏰ E-Commerce Traffic: Number of orders by Time and Day""")
     bar4 = px.imshow(ord_daytime.iloc[:,:7], text_auto=True, labels=dict(x='Day of the Week', y='Purchase Time'), x=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday','Saturday','Sunday'],color_continuous_scale='deep',width=600,height=450)
     bar4.update_yaxes(title=None,visible=True, showticklabels=True)
     bar4.update_xaxes(title=None,visible=True, showticklabels=True)
@@ -422,25 +442,23 @@ with b4:
     
 c1,c2 = st.columns(2)
 with c1:
-    st.markdown('### 🚛 On Time vs Late Deliveries (G5)')
+    st.markdown('### 🚛 On Time vs Late Deliveries')
     pie_actual_late_delivery1 = px.pie(deliver, values='order_id', names = 'status', hover_name='status',color_discrete_sequence=['DarkBlue','DarkRed'],width=600,height=450)
     pie_actual_late_delivery1.update_layout(showlegend=False,width=300,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
     pie_actual_late_delivery1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
     st.write(pie_actual_late_delivery1)
 with c2:
-    st.markdown('### 💱 Payment Preferences (G8)')
+    st.markdown('### 💱 Payment Preferences')
     pie_payment1 = px.pie(payments_df, values='count', names = 'payment_type', hover_name='payment_type',color_discrete_sequence=px.colors.sequential.Agsunset,width=600,height=450)
     pie_payment1.update_layout(showlegend=True,width=600,height=300,margin=dict(l=1,r=1,b=1,t=1),font=dict(color='#383635', size=15))
     pie_payment1.update_traces(textposition='inside', textinfo='percent+label', textfont_size=20) # this function adds labels to the pie chart
     c2.write(pie_payment1)
 
-
-
 # Row C
 d1, d2 = st.columns(2)
 
 with d1:
-    st.markdown('### 🤔 Volume of Reviews per State (G6.1)')
+    st.markdown('### 🤔 Volume of Reviews per State')
     # creates a choropleth map using the lat_lng column and state_id_map
     bar62 = px.choropleth(customers__orders_reviews_state, geojson=brazil_geo, locations="customer_state",
                     color="mean",
@@ -455,7 +473,7 @@ with d1:
     d1.write(bar62)
 
 with d2:
-    st.markdown('### 💙 Review Score per User (G6.2)')
+    st.markdown('### 💙 Review Score of Every User')
     # mapbox density heatmap of the reviews by customers with the geolocation_lat and geolocation_long and the review_score as the color
     bar6 = px.density_mapbox(customers_orders_reviews, lat="geolocation_lat", lon="geolocation_lng",
                             z="review_score", radius=3, mapbox_style="open-street-map",
@@ -465,12 +483,10 @@ with d2:
                             labels=dict(review_score='Review Score'))
     bar6.update_layout()
     d2.write(bar6)
-    
-#Row E
-e1, e2 = st.columns(2)
 
+e1,e2 = st.columns(2)
 with e1:
-    st.markdown('### 🏃🏽‍♀️💨 Churn Analysis (G7)')
+    st.markdown('### 🏃🏽‍♀️💨 Churn Analysis: Loss of customers after a certain number of orders')
     bar7 = go.Figure(data=[go.Table(
         header=dict(values=list(churn.columns),
                     fill_color='darkblue',
@@ -480,48 +496,44 @@ with e1:
                 fill_color='DarkSlateBlue',
                 align='center',
                 font_size=14))])
-    bar7.update_layout(margin=dict(l=1,r=1,b=1,t=1),width=600)
-    e1.markdown('\n')
-    e1.markdown('\n')
-    e1.markdown('\n')
-    e1.markdown('\n')
-    e1.markdown('\n')
-    e1.markdown('\n')
+    #bar7.update_layout(margin=dict(l=1,r=1,b=1,t=1))
     e1.write(bar7)
 
-
+#graph 9
 with e2:
-    #graph 9
     categories = filt_olist['category']
 
-    radar_graph = go.Figure()
+    radar_graph = make_subplots(rows=1, cols=2,
+                    specs=[[{'type':'polar'}, {'type':'polar'}]],
+                    subplot_titles=("Best Products", "Worst Products")
+                    )
 
-    radar_graph.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0,1],
-                
-            )),
-            showlegend=False,
-            template="plotly_dark")
+    radar_graph.add_traces(    
+    [go.Scatterpolar(
+            r=best_olist['sentiment'],
+            theta=best_olist['category'],
+            name='Olist'),
+        go.Scatterpolar(
+            r=best_mlibre['sentiment'],
+            theta=best_mlibre['product_category_name_english'],
+            name='Mercado Livre'),
+        go.Scatterpolar(
+            r=worst_olist['sentiment'],
+            theta=worst_olist['category'],
+            name='Olist'),
+        go.Scatterpolar(
+            r=worst_mlibre['sentiment'],
+            theta=worst_mlibre['product_category_name_english'],
+            name='Mercado Livre')
+        ],
+        rows=[1, 1, 1, 1], 
+        cols=[1, 1, 2, 2])
 
-    radar_graph.add_trace(go.Scatterpolar(
-        r=filt_olist['sentiment'],
-        theta=categories,
-        name='Olist',
-    ))
-
-
-    radar_graph.add_trace(go.Scatterpolar(
-        r=translated_revs['sentiment'],
-        theta=categories,
-        name='Competitor',
-    ))
-    radar_graph.update_layout(margin=dict(l=1,r=1,b=20,t=20))
-    radar_graph.update_layout(width=600,height=400)
-    e2.markdown('### 🐱‍🚀 Sentiment Benchmarking (G9)')
-    
+    #radar_graph.update_layout(margin=dict(l=1,r=1,b=20,t=20))
+    #radar_graph.update_layout(width=600,height=400)
+    radar_graph.update_layout(template="plotly_dark")
+    radar_graph.update_traces(showlegend=False)
+    e2.markdown('''### 🐱‍🚀 Reviews Benchmarking: Sentiment Analysis comparation between Mercado Livre and Olist''')
     e2.write(radar_graph)
 
 st.markdown('***')
